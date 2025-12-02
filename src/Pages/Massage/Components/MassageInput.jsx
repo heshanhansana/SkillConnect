@@ -1,5 +1,6 @@
 import React from 'react';
 import { Paperclip, Send } from 'lucide-react';
+import Button2 from '../../../components/ui/button';
 
 
 
@@ -12,9 +13,13 @@ const MessageInput = () => {
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="text-gray-400 hover:text-gray-600">
+        
+
+        <Button2 className="!px-3 !py-3">
           <Paperclip className="w-5 h-5" />
-        </button>
+        </Button2>
+        
+
         
         <div className="flex-1 bg-gray-100 rounded-lg flex items-center px-4 py-2">
           <input 
@@ -24,10 +29,10 @@ const MessageInput = () => {
           />
         </div>
 
-        <button className="bg-gray-800 text-white px-6 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-900 transition-colors">
+        <Button2 className="flex items-center gap-2">
           <Send className="w-4 h-4" />
           <span className="text-sm font-medium">Send</span>
-        </button>
+        </Button2>
         
       </div>
     </div>

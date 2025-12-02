@@ -8,7 +8,7 @@ const MessageBubble = ({ isOwn, text, time }) => {
         className={`max-w-[70%] px-5 py-3 rounded-2xl text-sm leading-relaxed text-left
         ${isOwn 
           ? 'bg-purple-800 text-white rounded-tr-none' 
-          : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
+          : 'bg-white border border-gray-300 text-gray-800 rounded-tl-none'
         }`}
       >
         {text}
