@@ -5,7 +5,7 @@ import NavBar from './components/NavBar.jsx';
 import Footer from './components/Footer.jsx';
 
 import Home from './Pages/Home/Home.jsx';
-import SkillSearch from './Pages/SkillSearch.jsx';
+import SkillSearch from './Pages/SkillSearch/Components/SkillSearch.jsx';
 import SkillRequest from './Pages/SkillRequest.jsx';
 import Community from './Pages/Community.jsx';
 import MessagePage from './Pages/Message/MessagePage.jsx';
