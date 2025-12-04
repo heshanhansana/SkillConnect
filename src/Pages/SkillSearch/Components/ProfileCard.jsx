@@ -24,7 +24,8 @@ export default function ProfileCard({ user }) {
         <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
           ⭐ {user.rating}
           <span>•</span>
-          {user.time}
+        <div className="flex items-center gap-1">⏱ {user.time}</div>
+
         </div>
 
         {/* Skills */}

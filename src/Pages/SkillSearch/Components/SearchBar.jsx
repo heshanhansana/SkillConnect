@@ -3,21 +3,22 @@ import Button2 from "../../../components/ui/button";
 
 export default function SearchBar({ onFilterClick }) {
   return (
-    <div className="flex items-center gap-4 w-full mt-15 pt-6 pl-6 pr-6">
+    <div className="flex items-center gap-4 w-full mt-15 pt-6 pl-6 pr-6 ">
 
       {/* Search Field */}
       <div className="
         flex items-center
-        bg-white/20 backdrop-blur-xl 
+        bg-white
         shadow-lg border border-white/30 
         rounded-2xl px-5 py-4
         w-[100%] max-w-5xl
+
       ">
         <FaSearch className="text-purple-600 text-lg" />
         <input
           type="text"
           placeholder="Search skills here..."
-          className="ml-3 w-full outline-none text-gray-800 font-medium text-sm bg-transparent"
+          className="ml-3 w-full outline-none text-gray-800 font-medium text-sm bg-white"
         />
       </div>
 
