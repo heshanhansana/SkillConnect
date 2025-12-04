@@ -48,11 +48,7 @@ const MassageWindow = () => {
       </div>
 
       {/* Messages */}
-      
-
-
-      <div className="custom-scrollbar overflow-y-auto h-screen">
-        <div className="flex-1 overflow-y-auto p-6 bg-white "> {/*scroll*/}
+      <div className="flex-1 overflow-y-auto p-6 bg-white">
         {chat.messages && chat.messages.map((message) => (
           <MessageBubble
             key={message.id}
@@ -61,7 +57,6 @@ const MassageWindow = () => {
             time={message.time}
           />
         ))}
-      </div>
       </div>
 
       {/* Input */}
