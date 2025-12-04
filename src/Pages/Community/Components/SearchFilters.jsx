@@ -12,8 +12,8 @@ export default function SearchFilters({
   setSortBy,
 }) {
   return (
-    <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="col-span-2">
+    <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="col-span-1 lg:col-span-2">
         <div className="relative">
           <input
             value={search}

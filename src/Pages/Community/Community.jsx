@@ -99,14 +99,14 @@ export default function CommunityPage() {
   return (
     <>
       <NavBar />
-      <div className="bg-gradient-to-br from-[#F3E8FF] to-white w-full shadow-xl rounded-3xl mt-20 px-6 py-8 min-h-[80vh]">
+      <div className="bg-gradient-to-br from-[#F3E8FF] to-white w-full shadow-xl rounded-3xl mt-20 px-4 sm:px-6 py-6 sm:py-8 min-h-[80vh]">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-semibold mb-6 text-slate-900">Community</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-slate-900">Community</h1>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6 w-full">
             <CommunityTabs tabs={tabs} active={activeTab} setActive={setActiveTab} />
-            <div>
-              <Button2 onClick={() => { setForm({ title: "", author: "", category: "", tags: [], content: "" }); setIsModalOpen(true); }}>
+            <div className="w-full sm:w-auto">
+              <Button2 onClick={() => { setForm({ title: "", author: "", category: "", tags: [], content: "" }); setIsModalOpen(true); }} className="w-full sm:w-auto">
                 New Discussion
               </Button2>
             </div>
