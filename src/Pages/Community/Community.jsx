@@ -4,6 +4,7 @@ import CommunityTabs from "./Components/CommunityTabs";
 import SearchFilters from "./Components/SearchFilters";
 import DiscussionList from "./Components/DiscussionList";
 import NewDiscussionModal from "./Components/NewDiscussionModal";
+import Button2 from "../../components/ui/button";
 
 const initialData = [
   {
@@ -105,10 +106,9 @@ export default function CommunityPage() {
           <div className="flex items-center justify-between mb-6">
             <CommunityTabs tabs={tabs} active={activeTab} setActive={setActiveTab} />
             <div>
-              <button onClick={() => { setForm({ title: "", author: "", category: "", tags: [], content: "" }); setIsModalOpen(true); }}
-                className="bg-gray-900 text-white px-4 py-2 rounded shadow hover:bg-black">
+              <Button2 onClick={() => { setForm({ title: "", author: "", category: "", tags: [], content: "" }); setIsModalOpen(true); }}>
                 New Discussion
-              </button>
+              </Button2>
             </div>
           </div>
 
