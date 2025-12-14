@@ -6,7 +6,7 @@ import { useChat } from '../ChatContext';
 import Button2 from '../../../components/ui/button';
 
 const MessageWindow = () => {
-  const { selectedChat: chat } = useChat();
+  const { selectedChat: chat, messages } = useChat();
 
   if (!chat) {
     return (
@@ -24,7 +24,7 @@ const MessageWindow = () => {
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 ${chat.color} rounded-full flex items-center justify-center text-xs font-bold text-gray-500`}>
-            IMG
+            {chat.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div>
             <h2 className="font-bold text-gray-900">{chat.name}</h2>
@@ -43,24 +43,29 @@ const MessageWindow = () => {
       </div>
 
       {/* Request */}
-      <div className="bg-purple-50 px-6 py-3 border-b border-purple-100">
-        <span className="text-purple-600 font-medium text-sm">Request: {chat.action}</span>
-      </div>
+      {chat.action && (
+        <div className="bg-purple-50 px-6 py-3 border-b border-purple-100">
+          <span className="text-purple-600 font-medium text-sm">Request: {chat.action}</span>
+        </div>
+      )}
 
       {/* Messages */}
-      
-
-
       <div className="custom-scrollbar overflow-y-auto h-screen">
-        <div className="flex-1 overflow-y-auto p-6 bg-white "> {/*scroll*/}
-        {chat.messages && chat.messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            isOwn={message.sender === 'me'}
-            text={message.text}
-            time={message.time}
-          />
-        ))}
+        <div className="flex-1 overflow-y-auto p-6 bg-white ">
+        {messages && messages.length > 0 ? (
+          messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              isOwn={message.sender === 'me'}
+              text={message.text}
+              time={message.time}
+            />
+          ))
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            No messages yet. Start the conversation!
+          </div>
+        )}
       </div>
       </div>
 

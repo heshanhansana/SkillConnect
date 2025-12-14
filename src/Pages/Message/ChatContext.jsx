@@ -1,88 +1,256 @@
-import React, { createContext, useState, useContext } from 'react'
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { io } from 'socket.io-client';
+
 const ChatContext = createContext();
 
-// Initial data 
-const initialChats = [
-  {
-    id: 1,
-    name: 'Tiranaga Liyanage',
-    action: 'React Hooks Help',
-    message: 'Thanks for the help with React',
-    time: '2m ago',
-    unread: 2,
-    color: 'bg-gray-200',
-    messages: [
-      { id: 1, text: "Hi! I need some help with React Hooks.", time: "10:30 AM", sender: 'Tiranaga Liyanage' },
-      { id: 2, text: "Sure! I'd be happy to help. What specifically are you working on?", time: "10:32 AM", sender: 'me' },
-      { id: 3, text: "I'm trying to implement useEffect for API calls but getting infinite loops.", time: "10:33 AM", sender: 'Tiranaga Liyanage' },
-      { id: 4, text: "Ah, that's a common issue. You probably need to add dependencies to your useEffect array. Can you share your code?", time: "10:35 AM", sender: 'me' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Dinil Hansara',
-    action: 'UI/UX Design Review',
-    message: 'Can we schedule a call tomorrow?',
-    time: '1h ago',
-    unread: 0,
-    color: 'bg-blue-200',
-    messages: [
-      { id: 1, text: "Hey! Just wanted to follow up on the UI/UX review.", time: "1h ago", sender: 'Dinil Hansara' },
-      { id: 2, text: "Hi Dinil, yes! I have some feedback ready. Can we schedule a call tomorrow?", time: "55m ago", sender: 'me' }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Isira Dilum',
-    action: 'Mobile App Design',
-    message: "I've attached the design files",
-    time: '3h ago',
-    unread: 1,
-    color: 'bg-green-200',
-    messages: [
-      { id: 1, text: "Hi, I've attached the design files for the mobile app. Let me know what you think!", time: "3h ago", sender: 'Isira Dilum' },
-      { id: 2, text: "Thanks, Isira! Downloading them now. I'll get back to you by EOD.", time: "2h ago", sender: 'me' }
-    ]
-  }
-];
-
-
+const API_URL = 'http://localhost:5000/api';
+const SOCKET_URL = 'http://localhost:5000';
 
 // Provider component
 export const ChatProvider = ({ children }) => {
-  const [chats, setChats] = useState(initialChats);
-  const [selectedChat, setSelectedChat] = useState(initialChats[0]);
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [socket, setSocket] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const handleSelectChat = (chat) => {
-    setSelectedChat(chat);
+  // Initialize socket and get current user from localStorage
+  useEffect(() => {
+    // Get logged in user from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setCurrentUser(user);
+    }
+
+    // Initialize socket connection
+    const newSocket = io(SOCKET_URL);
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  // Register user when socket and currentUser are ready
+  useEffect(() => {
+    if (socket && currentUser?.id) {
+      socket.emit('user_online', currentUser.id);
+    }
+  }, [socket, currentUser]);
+
+  // Fetch conversations when currentUser is set
+  useEffect(() => {
+    if (currentUser?.id) {
+      fetchConversations();
+      fetchUsers();
+    }
+  }, [currentUser]);
+
+  // Join conversation room when selected
+  useEffect(() => {
+    if (socket && selectedChat?._id) {
+      socket.emit('join_conversation', selectedChat._id);
+      fetchMessages(selectedChat._id);
+
+      return () => {
+        socket.emit('leave_conversation', selectedChat._id);
+      };
+    }
+  }, [socket, selectedChat?._id]);
+
+  // Listen for new messages
+  useEffect(() => {
+    if (socket) {
+      socket.on('new_message', (newMessage) => {
+        setMessages((prev) => [...prev, newMessage]);
+        
+        // Update chat list with last message
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === newMessage.conversationId
+              ? { ...chat, lastMessage: newMessage.text, lastMessageTime: newMessage.createdAt }
+              : chat
+          )
+        );
+      });
+
+      return () => {
+        socket.off('new_message');
+      };
+    }
+  }, [socket]);
+
+  // Fetch all users for new chats
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/users`);
+      const data = await response.json();
+      if (data.success) {
+        setUsers(data.users);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
   };
 
-  const handleSendMessage = (messageText) => {
-    if (!messageText.trim()) return;
-
-    const newMessage = {
-      id: Date.now(),
-      text: messageText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      sender: 'me',
-    };
-
-    const updatedChats = chats.map(chat => {
-      if (chat.id === selectedChat.id) {
-        const updatedChat = { ...chat, messages: [...chat.messages, newMessage] };
-        setSelectedChat(updatedChat);
-        return updatedChat;
+  // Fetch conversations for the current user
+  const fetchConversations = async () => {
+    if (!currentUser?.id) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/conversations/${currentUser.id}`);
+      const data = await response.json();
+      if (data.success) {
+        // Format conversations for display
+        const formattedChats = data.conversations.map((conv) => {
+          const otherParticipant = conv.participants.find(
+            (p) => p._id !== currentUser.id
+          );
+          return {
+            ...conv,
+            name: otherParticipant 
+              ? `${otherParticipant.firstName} ${otherParticipant.lastName}`
+              : 'Unknown User',
+            otherUser: otherParticipant,
+            message: conv.lastMessage || 'No messages yet',
+            time: formatTime(conv.lastMessageTime),
+            unread: 0,
+            color: getRandomColor(),
+          };
+        });
+        setChats(formattedChats);
       }
-      return chat;
-    });
-    setChats(updatedChats);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch messages for a conversation
+  const fetchMessages = async (conversationId) => {
+    try {
+      const response = await fetch(`${API_URL}/messages/${conversationId}`);
+      const data = await response.json();
+      if (data.success) {
+        // Format messages for display
+        const formattedMessages = data.messages.map((msg) => ({
+          id: msg._id,
+          text: msg.text,
+          time: formatTime(msg.createdAt),
+          sender: msg.senderId._id === currentUser?.id ? 'me' : msg.senderId.firstName,
+          senderId: msg.senderId._id,
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  // Create or get conversation with another user
+  const startConversation = async (otherUserId) => {
+    if (!currentUser?.id) return null;
+    
+    try {
+      const response = await fetch(`${API_URL}/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant1: currentUser.id,
+          participant2: otherUserId,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        // Refresh conversations
+        await fetchConversations();
+        
+        // Find and select the new conversation
+        const otherParticipant = data.conversation.participants.find(
+          (p) => p._id !== currentUser.id
+        );
+        const formattedChat = {
+          ...data.conversation,
+          name: otherParticipant 
+            ? `${otherParticipant.firstName} ${otherParticipant.lastName}`
+            : 'Unknown User',
+          otherUser: otherParticipant,
+          message: data.conversation.lastMessage || 'No messages yet',
+          time: formatTime(data.conversation.lastMessageTime),
+          unread: 0,
+          color: getRandomColor(),
+        };
+        setSelectedChat(formattedChat);
+        return formattedChat;
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+    }
+    return null;
+  };
+
+  const handleSelectChat = useCallback((chat) => {
+    setSelectedChat(chat);
+  }, []);
+
+  const handleSendMessage = async (messageText) => {
+    if (!messageText.trim() || !selectedChat?._id || !currentUser?.id) return;
+
+    try {
+      const response = await fetch(`${API_URL}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: selectedChat._id,
+          senderId: currentUser.id,
+          text: messageText,
+        }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        console.error('Error sending message:', data.message);
+      }
+      // Message will be added via socket event
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  // Helper function to format time
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Helper function for random colors
+  const getRandomColor = () => {
+    const colors = ['bg-gray-200', 'bg-blue-200', 'bg-green-200', 'bg-purple-200', 'bg-pink-200', 'bg-yellow-200'];
+    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const value = {
     chats,
     selectedChat,
+    messages,
+    users,
+    loading,
+    currentUser,
     onSelectChat: handleSelectChat,
     onSendMessage: handleSendMessage,
+    startConversation,
+    refreshConversations: fetchConversations,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
