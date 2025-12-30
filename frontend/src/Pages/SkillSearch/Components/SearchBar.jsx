@@ -1,7 +1,22 @@
+import { useState } from "react";
 import { FaSearch, FaFilter } from "react-icons/fa";
 import Button2 from "../../../components/ui/button";
 
-export default function SearchBar({ onFilterClick }) {
+export default function SearchBar({ onSearch, onFilterClick }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch(searchQuery);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <div className="flex items-center gap-4 w-full mt-15 pt-6 pl-6 pr-6 ">
 
@@ -18,14 +33,16 @@ export default function SearchBar({ onFilterClick }) {
         <input
           type="text"
           placeholder="Search skills here..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
           className="ml-3 w-full outline-none text-gray-800 font-medium text-sm bg-white"
         />
       </div>
 
       {/* Search Button */}
-      <Button2>
+      <Button2 onClick={handleSearch}>
         Search
-
       </Button2>
 
       {/* Filter Button */}

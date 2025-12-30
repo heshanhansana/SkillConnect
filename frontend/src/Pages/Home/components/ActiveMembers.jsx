@@ -41,8 +41,13 @@ export default function ActiveMembers() {
     return `${Math.floor(hours / 24)}d ago`;
   };
 
-  const handleMessage = (userId) => {
+  const handleMessage = (userId, e) => {
+    e.stopPropagation();
     navigate(`/chat?userId=${userId}`);
+  };
+
+  const handleProfileClick = (userId) => {
+    navigate(`/profile/${userId}`);
   };
 
   if (loading) {
@@ -65,7 +70,8 @@ export default function ActiveMembers() {
           {activeMembers.map((m) => (
             <div
               key={m._id}
-              className="flex items-center justify-between p-4 rounded-2xl border border-purple-100 hover:border-purple-300 transition"
+              className="flex items-center justify-between p-4 rounded-2xl border border-purple-100 hover:border-purple-300 transition cursor-pointer"
+              onClick={() => handleProfileClick(m._id)}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#6C38FF] via-[#4C2AFF] to-[#EC38F5] text-white flex items-center justify-center text-[10px] font-bold shadow">
@@ -84,7 +90,7 @@ export default function ActiveMembers() {
               </div>
 
               <button 
-                onClick={() => handleMessage(m._id)}
+                onClick={(e) => handleMessage(m._id, e)}
                 className="px-3 py-1.5 text-sm rounded-xl bg-gradient-to-r from-[#7D4DF4] to-[#A589FD] text-white shadow hover:opacity-90 transition"
               >
                 Message

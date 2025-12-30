@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import NavBar from "../../components/NavBar";
 
 import {
@@ -24,7 +25,12 @@ import {
 } from "lucide-react"
 
 export default function ProfileViewerView() {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+  
   // --- State ---
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false)
 
   const [feedbackItems, setFeedbackItems] = useState([
@@ -36,6 +42,33 @@ export default function ProfileViewerView() {
   // State for the NEW feedback being written by the viewer
   const [newFeedback, setNewFeedback] = useState({ rating: 0, comment: "" })
   const [hoverRating, setHoverRating] = useState(0)
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserData();
+    }
+  }, [userId]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/profile/${userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUserData(data.user);
+      } else {
+        console.error("Failed to fetch user data");
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMessage = () => {
+    navigate(`/chat?userId=${userId}`);
+  };
 
   const handleFeedbackSubmit = () => {
     if (newFeedback.rating > 0 && newFeedback.comment.trim()) {
@@ -49,6 +82,34 @@ export default function ProfileViewerView() {
       setNewFeedback({ rating: 0, comment: "" })
     }
   }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F3E8FF] to-white font-sans text-gray-800">
+        <NavBar />
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#F3E8FF] to-white font-sans text-gray-800">
+        <NavBar />
+        <div className="flex items-center justify-center h-screen">
+          <p className="text-gray-600">User not found</p>
+        </div>
+      </div>
+    );
+  }
+
+  const profileImage = userData.profileImage ? `http://localhost:5000/${userData.profileImage}` : null;
+  const coverImage = userData.coverImage ? `http://localhost:5000/${userData.coverImage}` : null;
+  const avgRating = userData.skills?.length > 0
+    ? (userData.skills.reduce((sum, s) => sum + (s.rating || 0), 0) / userData.skills.length).toFixed(1)
+    : "N/A";
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-[#F3E8FF] to-white font-sans text-gray-800">
@@ -66,17 +127,23 @@ export default function ProfileViewerView() {
               {/* --- Profile Card --- */}
               <div className="bg-white sm:rounded-2xl shadow-xl border border-purple-100 overflow-hidden mb-4 relative">
                 {/* Cover Image */}
-                <div className="h-40 sm:h-48 bg-gradient-to-r from-slate-500 to-slate-700 relative"></div>
+                <div className="h-40 sm:h-48 bg-gradient-to-r from-slate-500 to-slate-700 relative overflow-hidden">
+                  {coverImage && (
+                    <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                  )}
+                </div>
 
                 <div className="px-4 sm:px-8 pb-8 relative">
                   {/* Avatar */}
                   <div className="-mt-16 mb-4 inline-block relative z-10">
                     <div className="w-32 h-32 rounded-full border-4 border-white bg-white overflow-hidden shadow-md">
-                      <img
-                          src="/user-profile-illustration.png"
-                          alt="Profile"
-                          className="w-full h-full object-cover"
-                      />
+                      {profileImage ? (
+                        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#6C38FF] to-[#EC38F5] flex items-center justify-center text-white text-3xl font-bold">
+                          {userData.firstName?.[0]}{userData.lastName?.[0]}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -86,26 +153,32 @@ export default function ProfileViewerView() {
                       <div className="mb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                           <h1 className="text-2xl font-bold text-gray-900">
-                            Alex Anderson <span className="text-gray-500 text-lg font-normal">(He/Him)</span>
+                            {userData.firstName} {userData.lastName} {userData.pronouns && <span className="text-gray-500 text-lg font-normal">({userData.pronouns})</span>}
                           </h1>
-                          <span className="w-fit flex  items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 text-[12px] px-2 py-0.5 rounded font-medium">
-                          <Star className="w-3 h-4 text-yellow-500 fill-yellow-500" />4.5
-                        </span>
+                          <span className="w-fit flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 text-[12px] px-2 py-0.5 rounded font-medium">
+                            <Star className="w-3 h-4 text-yellow-500 fill-yellow-500" />{avgRating}
+                          </span>
                         </div>
-                        <p className="text-base text-gray-900 font-medium mb-1">Product Manager | UX Enthusiast</p>
-                        <p className="text-sm text-gray-500 font-medium">Stanford University</p>
-                        <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                          <Globe className="w-3 h-3" /> Colombo, Western Province, Sri Lanka
-                        </p>
+                        {userData.headline && (
+                          <p className="text-base text-gray-900 font-medium mb-1">{userData.headline}</p>
+                        )}
+                        {userData.university && (
+                          <p className="text-sm text-gray-500 font-medium">{userData.university}</p>
+                        )}
+                        {userData.gpa && (
+                          <p className="text-sm text-gray-500 mt-1">GPA: {userData.gpa}</p>
+                        )}
                       </div>
 
                       {/* About Section */}
-                      <div className="mb-6 p-4  rounded-lg bg-[#E2D0F8] rounded-lg border border-[#A589FD]">
-                        <h3 className="text-sm font-semibold mb-2 text-gray-900">About</h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Passionate product manager with expertise in digital transformation. Creative problem solver committed to user-centric design and innovation.
-                        </p>
-                      </div>
+                      {userData.about && (
+                        <div className="mb-6 p-4 rounded-lg bg-[#E2D0F8] border border-[#A589FD]">
+                          <h3 className="text-sm font-semibold mb-2 text-gray-900">About</h3>
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {userData.about}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Action Buttons (Viewer Perspective) */}
                       <div className="flex gap-3 mb-4">
@@ -126,7 +199,7 @@ export default function ProfileViewerView() {
                           )}
                         </button>
 
-                        <button className="flex-1 flex items-center justify-center gap-2 border border-blue-600 text-blue-600 py-2 rounded-full hover:bg-blue-50 font-semibold text-sm transition-colors">
+                        <button className="flex-1 flex items-center justify-center gap-2 border border-blue-600 text-blue-600 py-2 rounded-full hover:bg-blue-50 font-semibold text-sm transition-colors" onClick={handleMessage}>
                           <Mail className="w-4 h-4" /> Message
                         </button>
 
@@ -138,31 +211,28 @@ export default function ProfileViewerView() {
 
                     {/* Right: Skills Box */}
                     <div className="lg:w-64 flex-shrink-0">
-                      <div className="bg-white border  rounded-lg p-4 shadow-sm h-full bg-[#A589FD] border-[#A589FD]">
+                      <div className="bg-white border rounded-lg p-4 shadow-sm h-full bg-[#A589FD] border-[#A589FD]">
                         <h3 className="font-bold text-sm mb-4">Top Skills</h3>
                         <div className="space-y-4">
-                          <SkillItem
-                              icon={<FlaskConical className="w-4 h-4" />}
-                              title="Web App Dev"
-                              sub="(React)"
-                              stars={4}
-                          />
-                          <SkillItem
-                              icon={<FlaskConical className="w-4 h-4" />}
-                              title="Mobile Dev"
-                              sub="(Kotlin)"
-                              stars={3}
-                          />
-                          <SkillItem
-                              icon={<FlaskConical className="w-4 h-4" />}
-                              title="Programming"
-                              sub="(Python)"
-                              stars={3}
-                          />
+                          {userData.skills && userData.skills.length > 0 ? (
+                            userData.skills.slice(0, 3).map((skill, idx) => (
+                              <SkillItem
+                                key={idx}
+                                icon={<FlaskConical className="w-4 h-4" />}
+                                title={skill.title}
+                                sub={skill.sub ? `(${skill.sub})` : ""}
+                                stars={skill.rating || 0}
+                              />
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-600">No skills listed</p>
+                          )}
                         </div>
-                        <button className="w-full mt-4 py-2 text-xs font-semibold text-gray-500 border-t hover:bg-gray-50 transition-colors">
-                          Show all skills
-                        </button>
+                        {userData.skills && userData.skills.length > 3 && (
+                          <button className="w-full mt-4 py-2 text-xs font-semibold text-gray-500 border-t hover:bg-gray-50 transition-colors">
+                            Show all skills
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -192,11 +262,20 @@ export default function ProfileViewerView() {
               {/* --- Portfolio Links --- */}
               <div className="bg-[#FFFFFF] rounded-xl shadow-[0_0_20px_#A589FD] p-4">
                 <h3 className="font-bold text-gray-900 mb-4 text-sm">Portfolio Links</h3>
-                <div className="space-y-3">
-                  <PortfolioLink icon={<Github className="w-5 h-5" />} title="GitHub" url="github.com/alex" />
-                  <PortfolioLink icon={<Linkedin className="w-5 h-5" />} title="LinkedIn" url="linkedin.com/in/alex" />
-                  <PortfolioLink icon={<Globe className="w-5 h-5" />} title="Website" url="alex.dev" />
-                </div>
+                {userData.portfolioLinks && userData.portfolioLinks.length > 0 ? (
+                  <div className="space-y-3">
+                    {userData.portfolioLinks.map((link, idx) => (
+                      <PortfolioLink 
+                        key={idx}
+                        icon={<Globe className="w-5 h-5" />} 
+                        title={link.title} 
+                        url={link.url} 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No portfolio links</p>
+                )}
               </div>
 
               {/* --- Feedback Section (Interactive) --- */}
@@ -204,17 +283,16 @@ export default function ProfileViewerView() {
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-sm">Feedback</h3>
-                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 font-medium">12 Reviews</span>
+                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full text-gray-600 font-medium">{feedbackItems.length} Reviews</span>
                   </div>
                   <div className="flex gap-0.5">
-
-                    <span className="text-xs bg-[#E3F9C2] text-black px-2 py-1 rounded-full font-medium">4.8 Avg</span>
+                    <span className="text-xs bg-[#E3F9C2] text-black px-2 py-1 rounded-full font-medium">{avgRating} Avg</span>
                   </div>
                 </div>
 
                 {/* Add Feedback Input */}
                 <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 shadow-[0_0_10px_#A589FD] mb-4">
-                  <p className="text-xs font-semibold mb-2 text-gray-700">Leave a review for Alex</p>
+                  <p className="text-xs font-semibold mb-2 text-gray-700">Leave a review for {userData.firstName}</p>
                   <div className="flex gap-1 mb-3">
                     {[1, 2, 3, 4, 5].map((i) => (
                         <button

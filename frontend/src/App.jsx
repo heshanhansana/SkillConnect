@@ -11,6 +11,7 @@ import Profile from './Pages/Profile/Profile.jsx';
 import Signup from './Pages/Signup/CreateAccountForm.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import Profileown from "./Pages/Profile/ProfileOwnerView.jsx";
+import ProfileViewerView from "./Pages/Profile/ProfileViewerView.jsx";
 import { useActivityTracker } from './useActivityTracker';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/signin" element={<LoginPage />} />
                 <Route path="/profile" element={<Profileown />} />
+                <Route path="/profile/:userId" element={<ProfileViewerView />} />
             </Routes>
 
             <FloatingChatButton />
